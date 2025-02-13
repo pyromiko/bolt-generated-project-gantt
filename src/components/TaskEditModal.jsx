@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import DatePicker from 'tailwind-datepicker-react';
 
-const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
+const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
   const [editedTask, setEditedTask] = useState({ ...task });
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -135,6 +135,28 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
             <option value="task">Task</option>
             <option value="milestone">Milestone</option>
           </select>
+
+          <select
+            name="parent"
+            value={editedTask.parent || ''}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          >
+            <option value="">No Parent</option>
+            {tasks && Array.isArray(tasks) && tasks.map(task => (
+              <option key={task.id} value={task.id}>{task.name} (ID: {task.id})</option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            name="dependencies"
+            placeholder="Dependencies (comma-separated task IDs)"
+            value={editedTask.dependencies || ''}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+
           <div className="flex justify-end">
             <button
               type="submit"

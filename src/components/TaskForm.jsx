@@ -2,7 +2,7 @@ import React from 'react';
 import DatePicker from 'tailwind-datepicker-react';
 import { format } from 'date-fns';
 
-const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange }) => {
+const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onAddTask(newTask);
@@ -118,6 +118,28 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange }) => {
         <option value="task">Task</option>
         <option value="milestone">Milestone</option>
       </select>
+
+      <select
+        name="parent"
+        value={newTask.parent || ''}
+        onChange={onTaskChange}
+        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      >
+        <option value="">No Parent</option>
+        {Array.isArray(tasks) && tasks.map(task => (
+          <option key={task.id} value={task.id}>{task.name}</option>
+        ))}
+      </select>
+
+      <input
+        type="text"
+        name="dependencies"
+        placeholder="Dependencies (comma-separated task IDs)"
+        value={newTask.dependencies || ''}
+        onChange={onTaskChange}
+        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      />
+
       <button
         type="submit"
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"

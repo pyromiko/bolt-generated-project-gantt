@@ -4,22 +4,37 @@ import TaskForm from './components/TaskForm';
 import { format, addDays } from 'date-fns';
 
 const initialTasks = [
-  { id: 1, name: 'Task 1', start: new Date(), end: addDays(new Date(), 5), progress: 20, type: 'task' },
-  { id: 2, name: 'Milestone 1', start: addDays(new Date(), 2), end: addDays(new Date(), 2), progress: 100, type: 'milestone' },
-  { id: 3, name: 'Task 2', start: addDays(new Date(), 7), end: addDays(new Date(), 12), progress: 50, type: 'task' },
+  { id: 1, name: 'Task 1', start: new Date(), end: addDays(new Date(), 5), progress: 20, type: 'task', dependencies: [], parent: null },
+  { id: 2, name: 'Milestone 1', start: addDays(new Date(), 2), end: addDays(new Date(), 2), progress: 100, type: 'milestone', dependencies: [], parent: null },
+  { id: 3, name: 'Task 2', start: addDays(new Date(), 7), end: addDays(new Date(), 12), progress: 50, type: 'task', dependencies: [], parent: null },
 ];
 
 function App() {
   const [tasks, setTasks] = useState(initialTasks);
-  const [newTask, setNewTask] = useState({ name: '', start: new Date(), end: addDays(new Date(), 1), progress: 0, type: 'task' });
+  const [newTask, setNewTask] = useState({ name: '', start: new Date(), end: addDays(new Date(), 1), progress: 0, type: 'task', dependencies: [], parent: null });
   const ganttRef = useRef(null);
 
   const handleAddTask = (task) => {
-    setTasks([...tasks, { ...task, id: Date.now() }]);
+    const dependenciesString = task.dependencies;
+    const dependenciesArray = typeof dependenciesString === 'string' && dependenciesString.length > 0
+      ? dependenciesString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+      : [];
+    setTasks([...tasks, { ...task, id: Date.now(), dependencies: dependenciesArray }]);
+    setNewTask({ name: '', start: new Date(), end: addDays(new Date(), 1), progress: 0, type: 'task', dependencies: [], parent: null });
   };
 
   const handleEditTask = (updatedTask) => {
-    setTasks(tasks.map(task => task.id === updatedTask.id ? updatedTask : task));
+    const dependenciesString = typeof updatedTask.dependencies === 'string' ? updatedTask.dependencies : '';
+    const dependenciesArray = dependenciesString
+      ? dependenciesString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+      : [];
+
+    // Update the tasks state with the modified task
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === updatedTask.id ? { ...updatedTask, dependencies: dependenciesArray } : task
+      )
+    );
   };
 
   const handleDeleteTask = (taskId) => {
@@ -72,7 +87,7 @@ function App() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4" style={{ width: '1366px' }}>
       <h1 className="text-2xl font-bold mb-4">Gantt Project - BOLT.DIY</h1>
 
       <div className="mb-4">
@@ -81,6 +96,7 @@ function App() {
           newTask={newTask}
           onTaskChange={handleTaskChange}
           onDateChange={handleDateChange}
+          tasks={tasks}
         />
       </div>
 

@@ -3,6 +3,7 @@ import { format, addDays, differenceInDays, startOfDay } from 'date-fns';
 import Draggable from 'react-draggable';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import TaskEditModal from './TaskEditModal';
+import { ArrowRightIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 
 const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
   const [startDate, setStartDate] = useState(startOfDay(new Date()));
@@ -11,7 +12,9 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
   const [taskBeingDragged, setTaskBeingDragged] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const ganttBodyRef = useRef(null);
+  const [dependencies, setDependencies] = useState([]);
 
   const zoomLevels = {
     day: 1,
@@ -36,14 +39,16 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
     },
   }));
 
+  const chartWidth = 1200; // Increased chart width
+
   const calculatePosition = (taskStart) => {
     const diff = differenceInDays(taskStart, startDate);
-    return (diff * (700 / columnWidth));
+    return (diff * (chartWidth / columnWidth));
   };
 
   const calculateWidth = (taskStart, taskEnd) => {
     const diff = differenceInDays(taskEnd, taskStart);
-    return (diff * (700 / columnWidth));
+    return (diff * (chartWidth / columnWidth));
   };
 
   const handleTaskDrag = (e, data, task) => {
@@ -53,11 +58,16 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
   const handleTaskStop = (e, data, task) => {
     if (!taskBeingDragged) return;
 
-    const daysMoved = Math.round(data.x / (700 / columnWidth));
+    const daysMoved = Math.round(data.x / (chartWidth / columnWidth));
     const newStart = addDays(task.start, daysMoved);
     const newEnd = addDays(task.end, daysMoved);
 
-    onEditTask({ ...task, start: newStart, end: newEnd });
+    // Validate dependencies before updating
+    if (validateDependencies(task, newStart, newEnd)) {
+      onEditTask({ ...task, start: newStart, end: newEnd });
+    } else {
+      alert('This move violates task dependencies.');
+    }
     setTaskBeingDragged(null);
   };
 
@@ -75,7 +85,12 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
   };
 
   const handleTaskUpdate = (updatedTask) => {
-    onEditTask(updatedTask);
+    // Validate dependencies before updating
+    if (validateDependencies(updatedTask, updatedTask.start, updatedTask.end)) {
+      onEditTask(updatedTask);
+    } else {
+      alert('This update violates task dependencies.');
+    }
     setIsModalOpen(false);
   };
 
@@ -93,41 +108,146 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
     return header;
   };
 
+  const getTaskDependencies = (task) => {
+    // Assuming each task has a 'dependencies' field which is an array of task IDs
+    return task.dependencies || [];
+  };
+
+  const validateDependencies = (task, newStart, newEnd) => {
+    const dependencies = getTaskDependencies(task);
+    for (const dependencyId of dependencies) {
+      const dependency = tasks.find(t => t.id === dependencyId);
+      if (dependency && newStart < dependency.end) {
+        return false; // Task cannot start before its dependency ends
+      }
+    }
+    return true;
+  };
+
+  const updateTaskDates = (task) => {
+    // Implement automatic update of dates based on dependencies
+    // This is a placeholder, actual implementation will depend on the specific logic
+    return task;
+  };
+
+  const toggleGroup = (taskId) => {
+    setExpandedGroups(prev => ({ ...prev, [taskId]: !prev[taskId] }));
+  };
+
+  const isGroupExpanded = (taskId) => {
+    return expandedGroups[taskId] || false;
+  };
+
+  const renderTaskRow = (task, level = 0) => {
+    if (!task) {
+      return null;
+    }
+
+    const isGroup = task.children && task.children.length > 0;
+    const marginLeft = level * 20;
+
+    return (
+      <React.Fragment key={task.id}>
+        <tr key={task.id}>
+          <td className="border p-2 relative">
+            <div style={{ marginLeft: `${marginLeft}px` }}>
+              {isGroup && (
+                <button onClick={() => toggleGroup(task.id)} className="mr-2">
+                  {isGroupExpanded(task.id) ? (
+                    <ChevronUpIcon className="h-5 w-5 inline-block" />
+                  ) : (
+                    <ChevronDownIcon className="h-5 w-5 inline-block" />
+                  )}
+                </button>
+              )}
+              <Draggable
+                axis="x"
+                bounds="parent"
+                onDrag={(e, data) => handleTaskDrag(e, data, task)}
+                onStop={(e, data) => handleTaskStop(e, data, task)}
+              >
+                <div
+                  className={`absolute h-6 rounded ${task.type === 'milestone' ? 'bg-green-500' : 'bg-blue-500'} text-white text-center`}
+                  style={{
+                    left: `${calculatePosition(task.start)}px`,
+                    width: `${calculateWidth(task.start, task.end)}px`,
+                  }}
+                >
+                  {task.name} (ID: {task.id}) ({task.progress}%)
+                  <div className="absolute top-1/2 right-2 transform -translate-y-1/2 space-x-1">
+                    <PencilIcon className="h-4 w-4 cursor-pointer" onClick={() => handleEditClick(task)} />
+                    <TrashIcon className="h-4 w-4 cursor-pointer" onClick={() => handleDeleteClick(task)} />
+                  </div>
+                </div>
+              </Draggable>
+            </div>
+          </td>
+        </tr>
+        {isGroup && isGroupExpanded(task.id) && task.children.map(child => {
+          const childTask = tasks.find(t => t.id === child);
+          if (childTask) {
+            return renderTaskRow(childTask, level + 1);
+          }
+          return null;
+        })}
+      </React.Fragment>
+    );
+  };
+
+  const renderDependencies = () => {
+    const arrows = [];
+
+    tasks.forEach(task => {
+      const dependencies = getTaskDependencies(task);
+      dependencies.forEach(dependencyId => {
+        const dependency = tasks.find(t => t.id === dependencyId);
+        if (dependency) {
+          const startX = calculatePosition(dependency.end) + calculateWidth(dependency.start, dependency.end);
+          const startY = ganttBodyRef?.current?.offsetTop + (tasks.indexOf(dependency) * 30) + 15; // Approximate center of the dependency task
+
+          const endX = calculatePosition(task.start);
+          const endY = ganttBodyRef?.current?.offsetTop + (tasks.indexOf(task) * 30) + 15; // Approximate center of the current task
+
+          arrows.push(
+            <line
+              key={`${task.id}-${dependencyId}`}
+              x1={startX}
+              y1={startY}
+              x2={endX}
+              y2={endY}
+              stroke="black"
+              strokeWidth="2"
+            />
+          );
+        }
+      });
+    });
+
+    return (
+      <svg width={chartWidth} height="500" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+        {arrows}
+      </svg>
+    );
+  };
+
+  // Modify the initial filtering to include tasks with parents if the parent is expanded
+  const renderTasks = () => {
+    return tasks.filter(task => {
+      return !task.parent || (task.parent && isGroupExpanded(task.parent));
+    }).map(task => renderTaskRow(task));
+  };
+
   return (
-    <div>
-      <table className="table-auto w-full">
+    <div style={{ position: 'relative' }}>
+      <table className="table-auto w-full" style={{ height: '500px' }}>
         <thead>
           <tr>{renderHeader()}</tr>
         </thead>
-        <tbody>
-          {tasks.map(task => (
-            <tr key={task.id}>
-              <td className="border p-2 relative">
-                <Draggable
-                  axis="x"
-                  bounds="parent"
-                  onDrag={(e, data) => handleTaskDrag(e, data, task)}
-                  onStop={(e, data) => handleTaskStop(e, data, task)}
-                >
-                  <div
-                    className={`absolute h-6 rounded ${task.type === 'milestone' ? 'bg-green-500' : 'bg-blue-500'} text-white text-center`}
-                    style={{
-                      left: `${calculatePosition(task.start)}px`,
-                      width: `${calculateWidth(task.start, task.end)}px`,
-                    }}
-                  >
-                    {task.name} ({task.progress}%)
-                    <div className="absolute top-1/2 right-2 transform -translate-y-1/2 space-x-1">
-                      <PencilIcon className="h-4 w-4 cursor-pointer" onClick={() => handleEditClick(task)} />
-                      <TrashIcon className="h-4 w-4 cursor-pointer" onClick={() => handleDeleteClick(task)} />
-                    </div>
-                  </div>
-                </Draggable>
-              </td>
-            </tr>
-          ))}
+        <tbody ref={ganttBodyRef}>
+          {renderTasks()}
         </tbody>
       </table>
+      {renderDependencies()}
 
       {isModalOpen && (
         <TaskEditModal
@@ -135,6 +255,7 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
           onClose={handleModalClose}
           task={selectedTask}
           onUpdate={handleTaskUpdate}
+          tasks={tasks}
         />
       )}
     </div>
