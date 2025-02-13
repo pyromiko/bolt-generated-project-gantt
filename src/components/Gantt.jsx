@@ -146,6 +146,8 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
     const isGroup = task.children && task.children.length > 0;
     const marginLeft = level * 20;
 
+    console.log("Rendering Task:", task); // ADDED LOGGING
+
     return (
       <React.Fragment key={task.id}>
         <tr key={task.id}>
@@ -230,12 +232,11 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
     );
   };
 
-  // Modify the initial filtering to include tasks with parents if the parent is expanded
+  // Modified renderTasks to render all tasks
   const renderTasks = () => {
-    return tasks.filter(task => {
-      return !task.parent || (task.parent && isGroupExpanded(task.parent));
-    }).map(task => renderTaskRow(task));
+    return tasks.map(task => renderTaskRow(task));
   };
+
 
   return (
     <div style={{ position: 'relative' }}>

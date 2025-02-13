@@ -1,52 +1,26 @@
-import React from 'react';
-import DatePicker from 'tailwind-datepicker-react';
+import React, { useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
 
 const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => {
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onAddTask(newTask);
   };
 
-  const handleStartDateChange = (selectedDate) => {
-    onDateChange('start', new Date(selectedDate));
+  const handleStartDateChange = (date) => {
+    setStartDate(date);
+    onDateChange('start', date);
   };
 
-  const handleEndDateChange = (selectedDate) => {
-    onDateChange('end', new Date(selectedDate));
+  const handleEndDateChange = (date) => {
+    setEndDate(date);
+    onDateChange('end', date);
   };
-
-  const [showStartDatePicker, setShowStartDatePicker] = React.useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = React.useState(false);
-
-  const toggleStartDatePicker = () => {
-    setShowStartDatePicker(!showStartDatePicker);
-  };
-
-  const toggleEndDatePicker = () => {
-    setShowEndDatePicker(!showEndDatePicker);
-  };
-
-  const options = {
-    title: "Select date",
-    autoHide: true,
-    todayBtn: false,
-    clearBtn: true,
-    theme: {
-      background: 'bg-gray-100 dark:bg-gray-700',
-      todayBtn: '',
-      clearBtn: '',
-      disabledText: 'text-gray-500 dark:text-gray-400',
-      input: 'bg-white dark:bg-gray-600 dark:text-white',
-      inputIcon: '',
-      selected: 'bg-blue-500 dark:bg-blue-500 text-white',
-    },
-    icons: {
-      prev: () => <span>Prev</span>,
-      next: () => <span>Next</span>
-    },
-    datepickerClassNames: 'top-12'
-  }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
@@ -61,44 +35,22 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => 
 
       <div>
         <label className="block text-gray-700 text-sm font-bold mb-2">Start Date:</label>
-        <div className="relative">
-          <input
-            type="text"
-            value={newTask.start ? format(newTask.start, 'yyyy-MM-dd') : ''}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            readOnly
-            onClick={toggleStartDatePicker}
-          />
-          {showStartDatePicker && (
-            <DatePicker
-              options={options}
-              onChange={handleStartDateChange}
-              show={showStartDatePicker}
-              setShow={setShowStartDatePicker}
-            />
-          )}
-        </div>
+        <DatePicker
+          selected={startDate}
+          onChange={handleStartDateChange}
+          dateFormat="dd/MM/yyyy"
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
       </div>
 
       <div>
         <label className="block text-gray-700 text-sm font-bold mb-2">End Date:</label>
-        <div className="relative">
-          <input
-            type="text"
-            value={newTask.end ? format(newTask.end, 'yyyy-MM-dd') : ''}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            readOnly
-            onClick={toggleEndDatePicker}
-          />
-          {showEndDatePicker && (
-            <DatePicker
-              options={options}
-              onChange={handleEndDateChange}
-              show={showEndDatePicker}
-              setShow={setShowEndDatePicker}
-            />
-          )}
-        </div>
+        <DatePicker
+          selected={endDate}
+          onChange={handleEndDateChange}
+          dateFormat="dd/MM/yyyy"
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
       </div>
 
       <input

@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import DatePicker from 'tailwind-datepicker-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
   const [editedTask, setEditedTask] = useState({ ...task });
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [startDate, setStartDate] = useState(task ? new Date(task.start) : new Date());
+  const [endDate, setEndDate] = useState(task ? new Date(task.end) : new Date());
 
   useEffect(() => {
     if (task) {
       setEditedTask({ ...task });
+      setStartDate(new Date(task.start));
+      setEndDate(new Date(task.end));
     }
   }, [task]);
 
@@ -20,47 +23,20 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
     setEditedTask(prevTask => ({ ...prevTask, [name]: value }));
   };
 
-  const handleStartDateChange = (selectedDate) => {
-    setEditedTask(prevTask => ({ ...prevTask, start: new Date(selectedDate) }));
+  const handleStartDateChange = (date) => {
+    setStartDate(date);
+    setEditedTask(prevTask => ({ ...prevTask, start: date }));
   };
 
-  const handleEndDateChange = (selectedDate) => {
-    setEditedTask(prevTask => ({ ...prevTask, end: new Date(selectedDate) }));
-  };
-
-  const toggleStartDatePicker = () => {
-    setShowStartDatePicker(!showStartDatePicker);
-  };
-
-  const toggleEndDatePicker = () => {
-    setShowEndDatePicker(!showEndDatePicker);
+  const handleEndDateChange = (date) => {
+    setEndDate(date);
+    setEditedTask(prevTask => ({ ...prevTask, end: date }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onUpdate(editedTask);
   };
-
-  const options = {
-    title: "Select date",
-    autoHide: true,
-    todayBtn: false,
-    clearBtn: true,
-    theme: {
-      background: 'bg-gray-100 dark:bg-gray-700',
-      todayBtn: '',
-      clearBtn: '',
-      disabledText: 'text-gray-500 dark:text-gray-400',
-      input: 'bg-white dark:bg-gray-600 dark:text-white',
-      inputIcon: '',
-      selected: 'bg-blue-500 dark:bg-blue-500 text-white',
-    },
-    icons: {
-      prev: () => <span>Prev</span>,
-      next: () => <span>Next</span>
-    },
-    datepickerClassNames: 'top-12'
-  }
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
@@ -78,44 +54,22 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
 
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">Start Date:</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={editedTask.start ? format(editedTask.start, 'yyyy-MM-dd') : ''}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                readOnly
-                onClick={toggleStartDatePicker}
-              />
-              {showStartDatePicker && (
-                <DatePicker
-                  options={options}
-                  onChange={handleStartDateChange}
-                  show={showStartDatePicker}
-                  setShow={setShowStartDatePicker}
-                />
-              )}
-            </div>
+            <DatePicker
+              selected={startDate}
+              onChange={handleStartDateChange}
+              dateFormat="dd/MM/yyyy"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
           </div>
 
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">End Date:</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={editedTask.end ? format(editedTask.end, 'yyyy-MM-dd') : ''}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                readOnly
-                onClick={toggleEndDatePicker}
-              />
-              {showEndDatePicker && (
-                <DatePicker
-                  options={options}
-                  onChange={handleEndDateChange}
-                  show={showEndDatePicker}
-                  setShow={setShowEndDatePicker}
-                />
-              )}
-            </div>
+            <DatePicker
+              selected={endDate}
+              onChange={handleEndDateChange}
+              dateFormat="dd/MM/yyyy"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
           </div>
 
           <input
