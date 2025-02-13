@@ -7,6 +7,7 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
   const [editedTask, setEditedTask] = useState({ ...task });
   const [startDate, setStartDate] = useState(task ? new Date(task.start) : new Date());
   const [endDate, setEndDate] = useState(task ? new Date(task.end) : new Date());
+  const [nameError, setNameError] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -35,6 +36,13 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!editedTask.name.trim()) {
+      setNameError('Task name cannot be empty');
+      return;
+    }
+
+    setNameError('');
     onUpdate(editedTask);
   };
 
@@ -51,6 +59,7 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
+          {nameError && <p className="text-red-500 text-xs italic">{nameError}</p>}
 
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">Start Date:</label>

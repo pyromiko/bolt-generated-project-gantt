@@ -28,6 +28,24 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
     setColumnWidth(zoomLevels[zoomLevel]);
   }, [zoomLevel]);
 
+  useEffect(() => {
+    // Update start and end dates based on tasks
+    if (tasks.length > 0) {
+      const taskStartDates = tasks.map(task => task.start);
+      const taskEndDates = tasks.map(task => task.end);
+
+      const minDate = new Date(Math.min(...taskStartDates));
+      const maxDate = new Date(Math.max(...taskEndDates));
+
+      setStartDate(startOfDay(minDate));
+      setEndDate(addDays(maxDate, 1)); // Extend the end date by one day
+    } else {
+      // Reset to default if no tasks
+      setStartDate(startOfDay(new Date()));
+      setEndDate(addDays(startOfDay(new Date()), 30));
+    }
+  }, [tasks]);
+
   useImperativeHandle(ref, () => ({
     zoomIn: () => {
       if (zoomLevel === 'month') return;
@@ -148,6 +166,12 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
 
     console.log("Rendering Task:", task); // ADDED LOGGING
 
+    const taskWidth = calculateWidth(task.start, task.end);
+    const taskPosition = calculatePosition(task.start);
+
+    // Calculate the width of the completed portion of the task
+    const completedWidth = (taskWidth * task.progress) / 100;
+
     return (
       <React.Fragment key={task.id}>
         <tr key={task.id}>
@@ -171,11 +195,18 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
                 <div
                   className={`absolute h-6 rounded ${task.type === 'milestone' ? 'bg-green-500' : 'bg-blue-500'} text-white text-center`}
                   style={{
-                    left: `${calculatePosition(task.start)}px`,
-                    width: `${calculateWidth(task.start, task.end)}px`,
+                    left: `${taskPosition}px`,
+                    width: `${taskWidth}px`,
                   }}
                 >
-                  {task.name} (ID: {task.id}) ({task.progress}%)
+                  <div
+                    className="absolute h-full left-0 top-0 bg-green-300 rounded"
+                    style={{
+                      width: `${completedWidth}px`,
+                      zIndex: 1, // Ensure it's behind the text
+                    }}
+                  ></div>
+                  <span style={{ zIndex: 2, position: 'relative' }}>{task.name} (ID: {task.id}) ({task.progress}%)</span>
                   <div className="absolute top-1/2 right-2 transform -translate-y-1/2 space-x-1">
                     <PencilIcon className="h-4 w-4 cursor-pointer" onClick={() => handleEditClick(task)} />
                     <TrashIcon className="h-4 w-4 cursor-pointer" onClick={() => handleDeleteClick(task)} />

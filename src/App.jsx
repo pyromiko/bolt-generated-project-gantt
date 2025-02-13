@@ -13,6 +13,7 @@ function App() {
   const [tasks, setTasks] = useState(initialTasks);
   const [newTask, setNewTask] = useState({ name: '', start: new Date(), end: addDays(new Date(), 1), progress: 0, type: 'task', dependencies: [], parent: null });
   const ganttRef = useRef(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleAddTask = (task) => {
     const dependenciesString = task.dependencies;
@@ -86,6 +87,19 @@ function App() {
     reader.readAsText(file);
   };
 
+  const handleClearAll = () => {
+    setShowConfirmation(true);
+  };
+
+  const confirmClearAll = () => {
+    setTasks([]);
+    setShowConfirmation(false);
+  };
+
+  const cancelClearAll = () => {
+    setShowConfirmation(false);
+  };
+
   return (
     <div className="container mx-auto p-4" style={{ width: '1366px' }}>
       <h1 className="text-2xl font-bold mb-4">Gantt Project - BOLT.DIY</h1>
@@ -103,13 +117,37 @@ function App() {
       <div className="mb-4 flex space-x-2">
         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleZoomIn}>Zoom In</button>
         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleZoomOut}>Zoom Out</button>
-         <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" onClick={handleExport}>Export to JSON</button>
+        <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" onClick={handleExport}>Export to JSON</button>
         <input type="file" accept=".json" onChange={handleImport} />
+        <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={handleClearAll}>Clear All</button>
       </div>
 
       <div className="overflow-x-auto">
         <Gantt ref={ganttRef} tasks={tasks} onEditTask={handleEditTask} onDeleteTask={handleDeleteTask} />
       </div>
+
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center">
+          <div className="relative p-5 border w-96 shadow-lg rounded-md bg-white">
+            <h3 className="text-lg font-semibold mb-4">Confirmation</h3>
+            <p>Are you sure you want to clear all tasks?</p>
+            <div className="flex justify-end mt-4">
+              <button
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                onClick={confirmClearAll}
+              >
+                Yes, Clear All
+              </button>
+              <button
+                className="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                onClick={cancelClearAll}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

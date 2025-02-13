@@ -6,9 +6,24 @@ import { format } from 'date-fns';
 const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
+  const [nameError, setNameError] = useState('');
+  const [progressError, setProgressError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!newTask.name.trim()) {
+      setNameError('Task name cannot be empty');
+      return;
+    }
+
+    if (newTask.progress < 0 || newTask.progress > 100) {
+      setProgressError('Progress must be between 0 and 100');
+      return;
+    }
+
+    setNameError('');
+    setProgressError('');
     onAddTask(newTask);
   };
 
@@ -22,6 +37,11 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => 
     onDateChange('end', date);
   };
 
+  const handleProgressChange = (e) => {
+    const value = Math.max(0, Math.min(100, e.target.value)); // Ensure value is between 0 and 100
+    onTaskChange({ target: { name: 'progress', value: value } });
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <input
@@ -32,6 +52,7 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => 
         onChange={onTaskChange}
         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
       />
+      {nameError && <p className="text-red-500 text-xs italic">{nameError}</p>}
 
       <div>
         <label className="block text-gray-700 text-sm font-bold mb-2">Start Date:</label>
@@ -58,9 +79,10 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => 
         name="progress"
         placeholder="Progress (0-100)"
         value={newTask.progress}
-        onChange={onTaskChange}
+        onChange={handleProgressChange}
         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
       />
+      {progressError && <p className="text-red-500 text-xs italic">{progressError}</p>}
       <select
         name="type"
         value={newTask.type}
