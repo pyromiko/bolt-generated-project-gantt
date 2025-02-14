@@ -54,8 +54,23 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
   };
 
   const handleProgressChange = (e) => {
-    const value = Math.max(0, Math.min(100, e.target.value)); // Ensure value is between 0 and 100
-    setEditedTask(prevTask => ({ ...prevTask, progress: value }));
+    let value = e.target.value;
+
+    // Replace comma with dot for consistent float parsing
+    value = value.replace(',', '.');
+
+    // Parse the value as a float
+    let parsedValue = parseFloat(value);
+
+    // Ensure the parsed value is within the range of 0 to 100
+    if (isNaN(parsedValue)) {
+      parsedValue = 0; // Default to 0 if parsing fails
+    } else {
+      parsedValue = Math.max(0, Math.min(100, parsedValue));
+    }
+
+    // Update the state with the corrected value
+    setEditedTask(prevTask => ({ ...prevTask, progress: parsedValue }));
   };
 
   const handleDependencyChange = (selectedOptions) => {
@@ -100,7 +115,7 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
           </div>
 
           <input
-            type="number"
+            type="text"
             name="progress"
             placeholder="Progress (0-100)"
             value={editedTask.progress || ''}
