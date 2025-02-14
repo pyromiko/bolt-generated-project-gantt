@@ -8,6 +8,7 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
   const [startDate, setStartDate] = useState(task ? new Date(task.start) : new Date());
   const [endDate, setEndDate] = useState(task ? new Date(task.end) : new Date());
   const [nameError, setNameError] = useState('');
+  const [progressError, setProgressError] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -42,9 +43,26 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
       return;
     }
 
+    if (editedTask.progress < 0 || editedTask.progress > 100) {
+      setProgressError('Progress must be between 0 and 100');
+      return;
+    }
+
     setNameError('');
+    setProgressError('');
     onUpdate(editedTask);
   };
+
+  const handleProgressChange = (e) => {
+    const value = Math.max(0, Math.min(100, e.target.value)); // Ensure value is between 0 and 100
+    setEditedTask(prevTask => ({ ...prevTask, progress: value }));
+  };
+
+  const handleDependencyChange = (selectedOptions) => {
+    const dependencyNames = Array.from(selectedOptions).map(option => option.value);
+    setEditedTask(prevTask => ({ ...prevTask, dependencies: dependencyNames }));
+  };
+
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
@@ -86,9 +104,10 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
             name="progress"
             placeholder="Progress (0-100)"
             value={editedTask.progress || ''}
-            onChange={handleChange}
+            onChange={handleProgressChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
+          {progressError && <p className="text-red-500 text-xs italic">{progressError}</p>}
           <select
             name="type"
             value={editedTask.type || 'task'}
@@ -111,14 +130,17 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate, tasks }) => {
             ))}
           </select>
 
-          <input
-            type="text"
+          <select
             name="dependencies"
-            placeholder="Dependencies (comma-separated task IDs)"
-            value={editedTask.dependencies || ''}
-            onChange={handleChange}
+            multiple
+            value={editedTask.dependencies || []}
+            onChange={(e) => handleDependencyChange(e.target.selectedOptions)}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
+          >
+            {Array.isArray(tasks) && tasks.map(task => (
+              <option key={task.id} value={task.name}>{task.name}</option>
+            ))}
+          </select>
 
           <div className="flex justify-end">
             <button

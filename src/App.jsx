@@ -16,24 +16,32 @@ function App() {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleAddTask = (task) => {
-    const dependenciesString = task.dependencies;
-    const dependenciesArray = typeof dependenciesString === 'string' && dependenciesString.length > 0
-      ? dependenciesString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
-      : [];
-    setTasks([...tasks, { ...task, id: Date.now(), dependencies: dependenciesArray }]);
+    let dependencyIds = [];
+    if (task.dependencies && Array.isArray(task.dependencies)) {
+      dependencyIds = task.dependencies
+        .map(name => {
+          const depTask = tasks.find(t => t.name === name);
+          return depTask ? depTask.id : null;
+        })
+        .filter(id => id !== null);
+    }
+    setTasks([...tasks, { ...task, id: Date.now(), dependencies: dependencyIds }]);
     setNewTask({ name: '', start: new Date(), end: addDays(new Date(), 1), progress: 0, type: 'task', dependencies: [], parent: null });
   };
 
   const handleEditTask = (updatedTask) => {
-    const dependenciesString = typeof updatedTask.dependencies === 'string' ? updatedTask.dependencies : '';
-    const dependenciesArray = dependenciesString
-      ? dependenciesString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
-      : [];
-
-    // Update the tasks state with the modified task
+    let dependencyIds = [];
+    if (updatedTask.dependencies && Array.isArray(updatedTask.dependencies)) {
+      dependencyIds = updatedTask.dependencies
+        .map(name => {
+          const depTask = tasks.find(t => t.name === name);
+          return depTask ? depTask.id : null;
+        })
+        .filter(id => id !== null);
+    }
     setTasks(prevTasks =>
       prevTasks.map(task =>
-        task.id === updatedTask.id ? { ...updatedTask, dependencies: dependenciesArray } : task
+        task.id === updatedTask.id ? { ...updatedTask, dependencies: dependencyIds } : task
       )
     );
   };

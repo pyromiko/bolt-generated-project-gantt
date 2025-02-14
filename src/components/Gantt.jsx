@@ -14,6 +14,7 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [expandedGroups, setExpandedGroups] = useState({});
   const ganttBodyRef = useRef(null);
+  const [headerDates, setHeaderDates] = useState([]);
   const [dependencies, setDependencies] = useState([]);
 
   const zoomLevels = {
@@ -45,6 +46,21 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
       setEndDate(addDays(startOfDay(new Date()), 30));
     }
   }, [tasks]);
+
+  useEffect(() => {
+    // Generate header dates
+    const generateHeaderDates = () => {
+      const dates = [];
+      let currentDate = startDate;
+      while (currentDate <= endDate) {
+        dates.push(currentDate);
+        currentDate = addDays(currentDate, 1);
+      }
+      setHeaderDates(dates);
+    };
+
+    generateHeaderDates();
+  }, [startDate, endDate, zoomLevel]);
 
   useImperativeHandle(ref, () => ({
     zoomIn: () => {
@@ -113,17 +129,11 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
   };
 
   const renderHeader = () => {
-    const header = [];
-    let currentDate = startDate;
-    while (currentDate <= endDate) {
-      header.push(
-        <th key={currentDate} className="border text-center py-2 w-24">
-          {format(currentDate, 'dd/MM/yyyy')}
-        </th>
-      );
-      currentDate = addDays(currentDate, 1);
-    }
-    return header;
+    return headerDates.map(date => (
+      <th key={date} className="border text-center py-2 w-24">
+        {format(date, 'dd/MM/yyyy')}
+      </th>
+    ));
   };
 
   const getTaskDependencies = (task) => {
@@ -235,11 +245,19 @@ const Gantt = forwardRef(({ tasks, onEditTask, onDeleteTask }, ref) => {
       dependencies.forEach(dependencyId => {
         const dependency = tasks.find(t => t.id === dependencyId);
         if (dependency) {
-          const startX = calculatePosition(dependency.end) + calculateWidth(dependency.start, dependency.end);
-          const startY = ganttBodyRef?.current?.offsetTop + (tasks.indexOf(dependency) * 30) + 15; // Approximate center of the dependency task
+          const taskStartPosition = calculatePosition(task.start);
+          const taskEndPosition = calculatePosition(task.end);
+          const dependencyStartPosition = calculatePosition(dependency.start);
+          const dependencyEndPosition = calculatePosition(dependency.end);
 
-          const endX = calculatePosition(task.start);
-          const endY = ganttBodyRef?.current?.offsetTop + (tasks.indexOf(task) * 30) + 15; // Approximate center of the current task
+          const taskCenterY = ganttBodyRef?.current?.offsetTop + (tasks.indexOf(task) * 30) + 15;
+          const dependencyCenterY = ganttBodyRef?.current?.offsetTop + (tasks.indexOf(dependency) * 30) + 15;
+
+          const startX = dependencyEndPosition + (calculateWidth(dependency.start, dependency.end) / 2);
+          const startY = dependencyCenterY;
+
+          const endX = taskStartPosition + (calculateWidth(task.start, task.end) / 2);
+          const endY = taskCenterY;
 
           arrows.push(
             <line

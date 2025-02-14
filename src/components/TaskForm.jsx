@@ -42,6 +42,12 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => 
     onTaskChange({ target: { name: 'progress', value: value } });
   };
 
+  const handleDependencyChange = (selectedOptions) => {
+    const dependencyNames = Array.from(selectedOptions).map(option => option.value);
+    onTaskChange({ target: { name: 'dependencies', value: dependencyNames } });
+  };
+
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <input
@@ -105,14 +111,17 @@ const TaskForm = ({ onAddTask, newTask, onTaskChange, onDateChange, tasks }) => 
         ))}
       </select>
 
-      <input
-        type="text"
+      <select
         name="dependencies"
-        placeholder="Dependencies (comma-separated task IDs)"
-        value={newTask.dependencies || ''}
-        onChange={onTaskChange}
+        multiple
+        onChange={(e) => handleDependencyChange(e.target.selectedOptions)}
         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-      />
+      >
+        {Array.isArray(tasks) && tasks.map(task => (
+          <option key={task.id} value={task.name}>{task.name}</option>
+        ))}
+      </select>
+
 
       <button
         type="submit"
